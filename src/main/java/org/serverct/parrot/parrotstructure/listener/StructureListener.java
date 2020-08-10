@@ -1,6 +1,5 @@
 package org.serverct.parrot.parrotstructure.listener;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,12 +20,10 @@ public class StructureListener implements Listener {
 
     @EventHandler
     public void onPlace(BlockPlaceEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(ParrotStructure.getInstance(), () -> {
-            Structure structure = ParrotStructure.getInstance().match(event.getBlock());
-            if (structure != null) {
-                structure.onCreate(event);
-            }
-        });
+        Structure structure = ParrotStructure.getInstance().match(event.getBlock(), null);
+        if (structure != null) {
+            structure.onCreate(event);
+        }
     }
 
     @EventHandler
@@ -37,12 +34,10 @@ public class StructureListener implements Listener {
 
     @EventHandler
     public void onBreak(BlockBreakEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(ParrotStructure.getInstance(), () -> {
-            Structure structure = ParrotStructure.getInstance().destroyMatch(event.getBlock(), damageMap.getOrDefault(event.getPlayer().getUniqueId(), Material.AIR));
-            if (structure != null) {
-                structure.onDestroy(event);
-            }
-        });
+        Structure structure = ParrotStructure.getInstance().match(event.getBlock(), damageMap.getOrDefault(event.getPlayer().getUniqueId(), Material.AIR));
+        if (structure != null) {
+            structure.onDestroy(event);
+        }
     }
 
     @EventHandler
@@ -50,12 +45,10 @@ public class StructureListener implements Listener {
         switch (event.getAction()) {
             case LEFT_CLICK_BLOCK:
             case RIGHT_CLICK_BLOCK:
-                Bukkit.getScheduler().runTaskAsynchronously(ParrotStructure.getInstance(), () -> {
-                    Structure structure = ParrotStructure.getInstance().match(event.getClickedBlock());
-                    if (structure != null && structure.isInteract(event)) {
-                        structure.interact(event);
-                    }
-                });
+                Structure structure = ParrotStructure.getInstance().match(event.getClickedBlock(), null);
+                if (structure != null && structure.isInteract(event)) {
+                    structure.interact(event);
+                }
                 break;
         }
     }

@@ -75,25 +75,9 @@ abstract class Structure {
         return target;
     }
 
-    public boolean match(Block block) {
+    public boolean match(Block block, Material material) {
         List<StructurePart> target = new ArrayList<>(parts);
-        target.removeIf(part -> part.getMaterial() != block.getType());
-        All_Possibility:
-        for (StructurePart targetPart : target) {
-            RelativeLocation center = targetPart.getLocation();
-            for (StructurePart part : parts) {
-                if (part.getLocation().center(center).get(block.getLocation()).getBlock().getType() != part.getMaterial()) {
-                    continue All_Possibility;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    public boolean destroyMatch(Block block, Material material) {
-        List<StructurePart> target = new ArrayList<>(parts);
-        target.removeIf(part -> part.getMaterial() != material);
+        target.removeIf(part -> part.getMaterial() != (material == null ? block.getType() : material));
         All_Possibility:
         for (StructurePart targetPart : target) {
             RelativeLocation center = targetPart.getLocation();
@@ -114,7 +98,7 @@ abstract class Structure {
         private final RelativeLocation location;
 
         public enum TriggerType {
-            BOTH, LEFT, RIGHT, NONE;
+            BOTH, LEFT, RIGHT, NONE
         }
     }
 

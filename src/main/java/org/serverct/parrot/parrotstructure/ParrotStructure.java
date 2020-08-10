@@ -11,6 +11,7 @@ import org.serverct.parrot.parrotstructure.listener.StructureListener;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class ParrotStructure extends JavaPlugin {
 
@@ -32,21 +33,16 @@ public final class ParrotStructure extends JavaPlugin {
         Bukkit.getScheduler().cancelTasks(this);
     }
 
-    public Structure match(Block block) {
-        for (Structure structure : structureMap.values()) {
-            if (structure.match(block)) {
-                return structure;
+    public Structure match(Block block, Material material) {
+        AtomicReference<Structure> result = new AtomicReference<>();
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            for (Structure structure : structureMap.values()) {
+                if (structure.match(block, material)) {
+                    result.set(structure);
+                }
             }
-        }
-        return null;
-    }
-
-    public Structure destroyMatch(Block block, Material material) {
-        for (Structure structure : structureMap.values()) {
-            if (structure.destroyMatch(block, material)) {
-                return structure;
-            }
-        }
-        return null;
+            result.set(null);
+        });
+        return result.get();
     }
 }
