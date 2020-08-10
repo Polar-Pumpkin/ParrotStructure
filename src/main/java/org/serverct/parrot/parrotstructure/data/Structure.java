@@ -1,7 +1,7 @@
 package org.serverct.parrot.parrotstructure.data;
 
 import lombok.Data;
-import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -12,18 +12,15 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.serverct.parrot.parrotstructure.ParrotStructure;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public abstract class Structure {
+public @Data
+abstract class Structure {
 
-    @Getter private final NamespacedKey key;
-    @Getter private final List<StructurePart> parts;
+    private final Map<UUID, Boolean> cooldownMap = new HashMap<>();
 
-    public Structure(NamespacedKey key, List<StructurePart> parts) {
-        this.key = key;
-        this.parts = parts;
-    }
+    private final NamespacedKey key;
+    private final List<StructurePart> parts;
 
     public abstract void onInteract(PlayerInteractEvent event);
 
@@ -35,7 +32,18 @@ public abstract class Structure {
         ParrotStructure.getInstance().getStructureMap().put(key, this);
     }
 
-    public boolean interact(PlayerInteractEvent event) {
+    public void interact(PlayerInteractEvent event) {
+        UUID user = event.getPlayer().getUniqueId();
+        if (!cooldownMap.getOrDefault(user, false)) {
+            cooldownMap.put(user, true);
+            onInteract(event);
+            Bukkit.getScheduler().runTaskLaterAsynchronously(ParrotStructure.getInstance(), () -> {
+                cooldownMap.put(user, false);
+            }, 10L);
+        }
+    }
+
+    public boolean isInteract(PlayerInteractEvent event) {
         Block block = event.getClickedBlock();
         if (block == null) return false;
         for (StructurePart part : getTrigger()) {
@@ -63,14 +71,31 @@ public abstract class Structure {
 
     public List<StructurePart> getTrigger() {
         List<StructurePart> target = new ArrayList<>(parts);
-        target.removeIf(part -> part.getType() != StructurePart.TriggerType.NONE);
+        target.removeIf(part -> part.getType() == StructurePart.TriggerType.NONE);
         return target;
     }
 
     public boolean match(Block block) {
         List<StructurePart> target = new ArrayList<>(parts);
         target.removeIf(part -> part.getMaterial() != block.getType());
-        All_Possibility: for (StructurePart targetPart : target) {
+        All_Possibility:
+        for (StructurePart targetPart : target) {
+            RelativeLocation center = targetPart.getLocation();
+            for (StructurePart part : parts) {
+                if (part.getLocation().center(center).get(block.getLocation()).getBlock().getType() != part.getMaterial()) {
+                    continue All_Possibility;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean destroyMatch(Block block, Material material) {
+        List<StructurePart> target = new ArrayList<>(parts);
+        target.removeIf(part -> part.getMaterial() != material);
+        All_Possibility:
+        for (StructurePart targetPart : target) {
             RelativeLocation center = targetPart.getLocation();
             for (StructurePart part : parts) {
                 if (part.getLocation().center(center).get(block.getLocation()).getBlock().getType() != part.getMaterial()) {
@@ -117,6 +142,14 @@ public abstract class Structure {
 
         RelativeLocation center(RelativeLocation loc) {
             return new RelativeLocation(this.x - loc.x, this.y - loc.y, this.z - loc.z);
+        }
+
+        String out() {
+            return "(x, y, z)"
+                    .replace("x", String.valueOf(x))
+                    .replace("y", String.valueOf(y))
+                    .replace("z", String.valueOf(z));
+
         }
     }
 }
