@@ -1,0 +1,6 @@
+name: ParrotStructure
+version: ${project.version}
+main: org.serverct.parrot.parrotstructure.ParrotStructure
+api-version: 1.16
+authors: [EntityParrot_]
+description: 多方块结构 API。
